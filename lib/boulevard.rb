@@ -1,5 +1,5 @@
 require "boulevard/version"
+require "boulevard/crypt"
 
 module Boulevard
-  # Your code goes here...
 end
