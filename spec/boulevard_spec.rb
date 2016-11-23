@@ -29,7 +29,7 @@ describe Boulevard do
     end
 
     describe 'with a file' do
-      around(&temporary_directory)
+      make_temporary_directory
 
       let(:path) { file('something.rb', code) }
 

@@ -63,8 +63,8 @@ module RSpecIncludeHelpers
 end
 
 module RSpecExtendHelpers
-  def temporary_directory
-    Proc.new do |example|
+  def make_temporary_directory
+    around do |example|
       Dir.mktmpdir do |dir|
         @tmp_dir = dir
         example.call

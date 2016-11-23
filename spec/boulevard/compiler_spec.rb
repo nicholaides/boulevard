@@ -1,7 +1,7 @@
 require 'fileutils'
 
 describe Boulevard::Compiler do
-  around(&temporary_directory)
+  make_temporary_directory
 
   it 'returns you the code of a file' do
     file_a = file_name 'a.rb', 'puts "hello"'
