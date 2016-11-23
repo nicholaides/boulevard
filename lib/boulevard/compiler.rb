@@ -33,6 +33,26 @@ module Boulevard
       end
     end
 
+    class RuntimeSet < Struct.new(:variable, :value)
+      def id
+        object_id
+      end
+
+      def contents
+        "
+        module BoulevardRuntime
+          def self.#{variable}
+            @#{variable} ||= Marshal.load(#{Marshal.dump(value).inspect})
+          end
+        end
+        "
+      end
+
+      def dir
+        "."
+      end
+    end
+
     def call(*filenames_and_code)
       filenames_and_code.flatten
         .map { |compilable| compile(compilable) }
