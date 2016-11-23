@@ -26,18 +26,39 @@ def require_secret_key(options)
   end
 end
 
+def require_host_type(options)
+  options.host_type.tap do |type|
+    types = Boulevard.host_types
+
+    unless type
+      $stderr.puts "Host type required."
+      $stderr.puts "Supply one via the '--host-type' flag'"
+      $stderr.puts "Available types: #{types.join(', ')}"
+      exit 1
+    end
+
+    unless types.include?(type)
+      $stderr.puts "Host type '#{type}' not recognized."
+      $stderr.puts "Available types: #{types.join(', ')}"
+      exit 1
+    end
+  end
+end
+
 command :'generate-host-code' do |c|
-  c.syntax = 'boulevard generate-host-code'
+  c.syntax = 'boulevard generate-host-code --secret-key SECRET_KEY --host-type HOST_TYPE'
   c.summary = 'Generate the code you need to put on the host'
 
   c.description = 'Generates the code you can put on the host server. Currently only works with Hook.io.'
 
-  c.option '-s', '--secret-key STRING', String, 'Secret key'
+  c.option '--host-type STRING', String, "Host type. Can be one of #{Boulevard.host_types.join(',')}"
+  c.option '--secret-key STRING', String, 'Secret key'
 
   c.action do |args, options|
+    host_type = require_host_type(options)
     secret_key = require_secret_key(options)
 
-    puts Boulevard.compile_host_code(secret_key)
+    puts Boulevard.compile_host_code(secret_key, host_type)
   end
 end
 
@@ -45,9 +66,9 @@ command :'package-code' do |c|
   c.syntax = 'boulevard package-code [path] [options]'
   c.summary = 'Take some code and package it up to be run on the host'
 
-  c.description = 'If path given, load file. If no path given, read from STDIN.'
+  c.description = 'If path given, load file, otherwise load from from STDIN.'
 
-  c.option '-s', '--secret-key STRING', String, 'Secret key'
+  c.option '--secret-key STRING', String, 'Secret key'
 
   c.action do |args, options|
     secret_key = require_secret_key(options)
@@ -66,9 +87,9 @@ command :'unpackage-code' do |c|
   c.syntax = 'boulevard unpackage-code [path] [options]'
   c.summary = 'Take some code and unpackage it. This is mostly for testing.'
 
-  c.description = 'If path given, load file. If no path given, read from STDIN.'
+  c.description = 'If path given, load file, otherwise load from from STDIN.'
 
-  c.option '-s', '--secret-key STRING', String, 'Secret key'
+  c.option '--secret-key STRING', String, 'Secret key'
 
   c.action do |args, options|
     secret_key = require_secret_key(options)

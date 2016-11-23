@@ -5,6 +5,14 @@ describe Boulevard do
     expect(Boulevard::VERSION).not_to be nil
   end
 
+  describe 'host types' do
+    it 'knows what types it supports' do
+      expect(Boulevard.host_types).to contain_exactly \
+        'hook_io',
+        'local_script'
+    end
+  end
+
   describe 'packaging and unpackaging' do
     let(:secret_key) { Boulevard::Crypt.generate_key }
     let(:code) { Base64.encode64(Random.new.bytes(rand(2**12) + 1)) }
@@ -53,8 +61,8 @@ describe Boulevard do
         it 'runs' do
           run "ruby local_script_runner '#{code_package}'"
 
-          expect(last_command_started).to have_output 'hello world'.reverse
           expect(last_command_started).to be_successfully_executed
+          expect(last_command_started).to have_output 'hello world'.reverse
         end
       end
 
@@ -66,8 +74,8 @@ describe Boulevard do
         it 'runs' do
           run "ruby local_script_runner '#{code_package}'"
 
-          expect(last_command_started).to have_output 'hello world'.reverse
           expect(last_command_started).to be_successfully_executed
+          expect(last_command_started).to have_output 'hello world'.reverse
         end
       end
     end
