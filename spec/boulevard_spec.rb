@@ -34,23 +34,42 @@ describe Boulevard do
   describe 'running the code' do
     let(:secret_key) { Boulevard::Crypt.generate_key }
 
-    context 'localy', type: :aruba do
-      it 'runs the code from a file' do
-        write_file 'local_script_runner', Boulevard.compile_host_code(secret_key, :local_script)
-
-        code_package = Boulevard.package_code(
-          secret_key,
-          'print BoulevardRuntime.env[:message].reverse',
-          message: 'hello world'
-        )
-
-        run "ruby local_script_runner '#{code_package}'"
-
-        expect(last_command_started).to have_output 'hello world'.reverse
-        expect(last_command_started).to be_successfully_executed
-      end
+    let(:script) do
+      'print BoulevardRuntime.env[:message].reverse'
     end
 
-    context 'in the cloud'
+    context 'localy', type: :aruba do
+      before do
+        write_file 'local_script_runner', Boulevard.compile_host_code(secret_key, :local_script)
+      end
+
+      context 'from a file' do
+        let(:code_package) do
+          write_file 'script.rb', script
+
+          Boulevard.package_file(secret_key, 'tmp/aruba/script.rb', message: 'hello world')
+        end
+
+        it 'runs' do
+          run "ruby local_script_runner '#{code_package}'"
+
+          expect(last_command_started).to have_output 'hello world'.reverse
+          expect(last_command_started).to be_successfully_executed
+        end
+      end
+
+      context 'from a string' do
+        let(:code_package) do
+          Boulevard.package_code(secret_key, script, message: 'hello world')
+        end
+
+        it 'runs' do
+          run "ruby local_script_runner '#{code_package}'"
+
+          expect(last_command_started).to have_output 'hello world'.reverse
+          expect(last_command_started).to be_successfully_executed
+        end
+      end
+    end
   end
 end
