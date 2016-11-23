@@ -36,7 +36,7 @@ describe Boulevard::Crypt do
 
   it 'errors when the encrypted message is changed' do
     envelope = described_class.decode_envelope(encrypted)
-    encrypted = envelope.fetch(:encrypted)
+    encrypted = envelope.fetch('encrypted')
 
     change_random_byte! encrypted
 

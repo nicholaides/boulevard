@@ -1,22 +1,54 @@
+require 'set'
+
 module Boulevard
   class Compiler
     class RequireRelativeTooComplex < StandardError
     end
 
-    def call(file_path, required_already = Set.new)
-      return "" if required_already.include?(file_path)
+    class FileName < Struct.new(:path)
+      def id
+        path
+      end
 
-      required_already << file_path
+      def contents
+        File.read(path)
+      end
 
-      contents = File.read(file_path)
+      def dir
+        File.dirname(path)
+      end
+    end
 
-      file_dir = File.dirname(file_path)
+    class Code < Struct.new(:code)
+      def id
+        object_id
+      end
 
-      contents.gsub(/^\s*require_relative.*$/) do |match|
+      def contents
+        code
+      end
+
+      def dir
+        "."
+      end
+    end
+
+    def call(*filenames_and_code)
+      filenames_and_code.flatten
+        .map { |compilable| compile(compilable) }
+        .join("\n")
+    end
+
+    def compile(compilable, required_already = Set.new)
+      return "" if required_already.include?(compilable.id)
+
+      required_already << compilable.id
+
+      compilable.contents.gsub(/^\s*require_relative.*$/) do |match|
         required_file_path = self.class.parse_require(match)
-        resolved_file_path = File.expand_path(required_file_path, file_dir)
+        resolved_file_path = File.expand_path(required_file_path, compilable.dir)
         resolved_file_path << '.rb'
-        call(resolved_file_path, required_already)
+        compile(FileName.new(resolved_file_path), required_already)
       end
     end
 

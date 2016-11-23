@@ -27,3 +27,53 @@ RSpec.configure do |config|
 
   Kernel.srand config.seed
 end
+
+
+require 'rspec/expectations'
+
+RSpec::Matchers.define :have_code do |expected|
+  def file_content(string)
+    string.each_line.map(&:strip).reject(&:empty?).join("\n")
+  end
+
+  match do |actual|
+    file_content(actual) == file_content(expected)
+  end
+end
+
+module RSpecIncludeHelpers
+  def file(name, contents)
+    File.join(@tmp_dir, name).tap do |path|
+      FileUtils.mkdir_p File.dirname(path)
+      File.write path, contents
+    end
+  end
+
+  def code(str)
+    Boulevard::Compiler::Code.new(str)
+  end
+
+  def file_name(name, contents)
+    Boulevard::Compiler::FileName.new(file(name, contents))
+  end
+
+  def source_content_of(file_path, options={drop: 0})
+    File.read(file_path).each_line.drop(options.fetch(:drop)).join
+  end
+end
+
+module RSpecExtendHelpers
+  def temporary_directory
+    Proc.new do |example|
+      Dir.mktmpdir do |dir|
+        @tmp_dir = dir
+        example.call
+      end
+    end
+  end
+end
+
+RSpec.configure do |config|
+  config.include RSpecIncludeHelpers
+  config.extend RSpecExtendHelpers
+end

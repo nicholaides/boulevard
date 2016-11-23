@@ -1,0 +1,84 @@
+#!/usr/bin/env ruby
+
+require 'commander/import'
+require_relative '../lib/boulevard'
+
+program :name, 'boulevard'
+program :version, Boulevard::VERSION
+program :description, 'Manage your Boulevard setup'
+
+command :'generate-key' do |c|
+  c.syntax = 'boulevard generate-key'
+  c.summary = 'Generate a new shared key'
+  c.description = 'Generates a new shared key that you will use both locally and on the server'
+
+  c.action do |args, options|
+    puts Boulevard::Crypt.generate_key
+  end
+end
+
+def require_secret_key(options)
+  options.secret_key or begin
+    $stderr.puts "Secret key required."
+    $stderr.puts "Supply one via the '--secret-key' flag'"
+    $stderr.puts "You can generate one via `boulevard generate-secret-key`"
+    exit 1
+  end
+end
+
+command :'generate-host-code' do |c|
+  c.syntax = 'boulevard generate-host-code'
+  c.summary = 'Generate the code you need to put on the host'
+
+  c.description = 'Generates the code you can put on the host server. Currently only works with Hook.io.'
+
+  c.option '-s', '--secret-key STRING', String, 'Secret key'
+
+  c.action do |args, options|
+    secret_key = require_secret_key(options)
+
+    puts Boulevard.compile_host_code(secret_key)
+  end
+end
+
+command :'package-code' do |c|
+  c.syntax = 'boulevard package-code [path] [options]'
+  c.summary = 'Take some code and package it up to be run on the host'
+
+  c.description = 'If path given, load file. If no path given, read from STDIN.'
+
+  c.option '-s', '--secret-key STRING', String, 'Secret key'
+
+  c.action do |args, options|
+    secret_key = require_secret_key(options)
+
+    output = if path = args[0]
+               Boulevard.package_file(secret_key, path)
+             else
+               Boulevard.package_code(secret_key, $stdin.read)
+             end
+
+    puts output
+  end
+end
+
+command :'unpackage-code' do |c|
+  c.syntax = 'boulevard unpackage-code [path] [options]'
+  c.summary = 'Take some code and unpackage it. This is mostly for testing.'
+
+  c.description = 'If path given, load file. If no path given, read from STDIN.'
+
+  c.option '-s', '--secret-key STRING', String, 'Secret key'
+
+  c.action do |args, options|
+    secret_key = require_secret_key(options)
+
+    package = if path = args[0]
+                 File.read(path)
+               else
+                 $stdin.read
+               end
+
+    puts Boulevard.unpackage(secret_key, package)
+  end
+end

@@ -1,5 +1,6 @@
 require 'openssl'
 require 'base64'
+require 'zlib'
 
 module Boulevard
   class Crypt
@@ -26,9 +27,9 @@ module Boulevard
       encrypted, iv = encrypt(self.class.zip(data))
 
       self.class.encode_envelope(
-        encrypted: encrypted,
-        iv: iv,
-        signature: sign(encrypted),
+        'encrypted' => encrypted,
+        'iv' => iv,
+        'signature' => sign(encrypted),
       )
     end
 
@@ -46,11 +47,11 @@ module Boulevard
     def unpackage(envelope)
       data = self.class.decode_envelope(envelope)
 
-      encrypted = data.fetch(:encrypted)
+      encrypted = data.fetch('encrypted')
 
-      verify_signature! encrypted, data.fetch(:signature)
+      verify_signature! encrypted, data.fetch('signature')
 
-      self.class.unzip(decrypt(encrypted, data.fetch(:iv)))
+      self.class.unzip(decrypt(encrypted, data.fetch('iv')))
     end
 
     def verify_signature!(encrypted, signature)
@@ -74,14 +75,22 @@ module Boulevard
       Zlib.inflate(data)
     end
 
+    def self.dump(native)
+      Marshal.dump(native)
+    end
+
+    def self.load(serialized)
+      Marshal.load(serialized)
+    end
+
     def self.encode_envelope(native_object)
-      str = Marshal.dump(native_object)
+      str = dump(native_object)
       Base64.strict_encode64(str)
     end
 
-    def self.decode_envelope(str)
-      str = Base64.strict_decode64(str)
-      Marshal.load(str)
+    def self.decode_envelope(base64)
+      serialized = Base64.strict_decode64(base64)
+      load(serialized)
     end
   end
 end
