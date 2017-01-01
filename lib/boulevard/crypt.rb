@@ -8,15 +8,23 @@ module Boulevard
     end
 
     def self.generate_key
-      Base64.strict_encode64(build_cipher.random_key)
+      encode_key(build_cipher.random_key)
     end
 
     def self.build_cipher(args = ['aes-256-cbc'])
       OpenSSL::Cipher.new(*args)
     end
 
+    def self.encode_key(key)
+      Base64.strict_encode64(key)
+    end
+
+    def self.decode_key(key)
+      Base64.strict_decode64(key)
+    end
+
     def initialize(key)
-      @key = key
+      @key = self.class.decode_key(key)
     end
 
     def sign(data)
