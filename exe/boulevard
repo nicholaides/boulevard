@@ -7,6 +7,8 @@ program :name, 'boulevard'
 program :version, Boulevard::VERSION
 program :description, 'Manage your Boulevard setup'
 
+Boulevard::SECRET_KEY_CONFIG_FILE = '.boulevard.key'
+
 command :'generate-key' do |c|
   c.syntax = 'boulevard generate-key'
   c.summary = 'Generate a new shared key'
@@ -18,12 +20,20 @@ command :'generate-key' do |c|
 end
 
 def require_secret_key(options)
-  options.secret_key or begin
-    $stderr.puts "Secret key required."
-    $stderr.puts "Supply one via the '--secret-key' flag'"
-    $stderr.puts "You can generate one via `boulevard generate-secret-key`"
-    exit 1
-  end
+  options.secret_key or
+    load_secret_key_from_file or
+    fail_with_secret_key_message
+end
+
+def load_secret_key_from_file
+  File.read(Boulevard::SECRET_KEY_CONFIG_FILE).strip rescue nil
+end
+
+def fail_with_secret_key_message
+  $stderr.puts "Secret key required."
+  $stderr.puts "Supply one via the '--secret-key' flag or store one in #{Boulevard::SECRET_KEY_CONFIG_FILE}"
+  $stderr.puts "You can generate one via `boulevard generate-secret-key`"
+  exit 1
 end
 
 command :'generate-host-code' do |c|
