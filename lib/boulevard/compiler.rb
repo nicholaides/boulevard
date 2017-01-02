@@ -33,18 +33,14 @@ module Boulevard
       end
     end
 
-    class RuntimeSet < Struct.new(:variable, :value)
+    class Environment < Struct.new(:value)
       def id
         object_id
       end
 
       def contents
         "
-        module BoulevardRuntime
-          def self.#{variable}
-            @#{variable} ||= Marshal.load(#{Marshal.dump(value).inspect})
-          end
-        end
+        ;boulevard_environment = Marshal.load(#{Marshal.dump(value).inspect});
         "
       end
 

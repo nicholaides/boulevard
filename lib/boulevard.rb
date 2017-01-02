@@ -1,21 +1,8 @@
 require_relative 'boulevard/compiler'
 require_relative 'boulevard/crypt'
 require_relative 'boulevard/version'
-require_relative 'boulevard/host_app'
 
 module Boulevard
-  def self.gem_file_path(rel_path)
-    File.join(File.expand_path('../..', __FILE__), rel_path)
-  end
-
-  def self.compile_host_code(secret_key, host_type)
-    Compiler.new.(
-      Compiler::FileName.new(gem_file_path("lib/boulevard/host.rb")),
-      Compiler::RuntimeSet.new(:secret_key, secret_key),
-      Compiler::FileName.new(gem_file_path("lib/host_adapters/#{host_type}.rb")),
-    )
-  end
-
   def self.package_file(secret_key, file_name, env = nil)
     package(secret_key, Compiler::FileName.new(file_name), env)
   end
@@ -27,10 +14,7 @@ module Boulevard
   def self.package(secret_key, compilable, env = nil)
     crypt = Crypt.new(secret_key)
 
-    code = Compiler.new.(
-      Compiler::RuntimeSet.new(:env, env),
-      compilable,
-    )
+    code = Compiler.new.(Compiler::Environment.new(env), compilable)
 
     crypt.package(code)
   end

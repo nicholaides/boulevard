@@ -1,5 +1,6 @@
 require 'rack/test'
 require 'json'
+require_relative '../../lib/boulevard/host_app'
 
 describe Boulevard::HostApp do
   include Rack::Test::Methods
@@ -33,7 +34,9 @@ describe Boulevard::HostApp do
   describe 'GET w query params' do
     include_examples 'runs guest app' do
       let(:guest_app_code) do
-        %q%-> (env) { [ 200, { 'Content-Type' => 'text/plain' }, [Rack::Request.new(env).params['some-param']]] }%
+        simple_rack_app "
+          Rack::Request.new(env).params['some-param']
+        "
       end
 
       let(:make_request) do
@@ -49,7 +52,9 @@ describe Boulevard::HostApp do
       end
 
       let(:guest_app_code) do
-        %q%-> (env) { [ 200, { 'Content-Type' => 'text/plain' }, [Rack::Request.new(env).params['some-param']]] }%
+        simple_rack_app "
+          Rack::Request.new(env).params['some-param']
+        "
       end
     end
   end
@@ -61,7 +66,9 @@ describe Boulevard::HostApp do
       end
 
       let(:guest_app_code) do
-        %q%-> (env) { [ 200, { 'Content-Type' => 'text/plain' }, [JSON.parse(env['rack.input'].read)['some-param']]] }%
+        simple_rack_app "
+          JSON.parse(env['rack.input'].read)['some-param']
+        "
       end
     end
   end

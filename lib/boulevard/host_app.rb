@@ -23,7 +23,12 @@ module Boulevard
 
       code_package = request.params.fetch('__code_package__')
       guest_app_script = Boulevard::Crypt.new(key).unpackage(code_package)
+
+      boulevard_environment = {}
+
       guest_app = eval(guest_app_script)
+
+      env['boulevard.environment'] = boulevard_environment
 
       guest_app.call(env)
     end

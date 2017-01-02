@@ -2,33 +2,29 @@ require 'rack/test'
 require 'boulevard/host_app'
 require 'json'
 
-describe 'CLI', type: :aruba do
+describe 'Using Boulevard from the CLI', type: :aruba do
   include Rack::Test::Methods
-  attr_accessor :app
+  let(:app) { Boulevard::HostApp.new(secret_key) }
 
-  def post_json(uri, json)
-    post uri, json.to_json, "CONTENT_TYPE" => "application/json"
-  end
+  let(:secret_key) { sh 'boulevard generate-key' }
 
   let(:guest_app_code) do
-    %q%-> (env) { [ 200, { 'Content-Type' => 'text/plain' }, [Rack::Request.new(env).params['some-param']]] }%
+    simple_rack_app "Rack::Request.new(env).params['some_param']"
   end
 
   it 'works end-to-end' do
-    key = sh 'boulevard generate-key'
-
     write_file 'guest-app.rb', guest_app_code
 
-    package = sh "boulevard package-code --secret-key '#{key}' guest-app.rb"
+    package = sh "boulevard package-code --secret-key '#{secret_key}' guest-app.rb"
     write_file 'package.blvd', package
 
     expect {
-      sh "boulevard unpackage-code --secret-key '#{key}' package.blvd"
+      sh "boulevard unpackage-code --secret-key '#{secret_key}' package.blvd"
     }.to_not raise_exception
 
-    self.app = Boulevard::HostApp.new(key)
-
-    post '/', 'some-param': 'Hello World', __code_package__: package
+    post '/',
+      some_param: 'Hello World',
+      __code_package__: package
 
     expect(last_response.body).to eq 'Hello World'
   end
