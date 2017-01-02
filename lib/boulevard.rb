@@ -1,6 +1,7 @@
 require_relative 'boulevard/compiler'
 require_relative 'boulevard/crypt'
 require_relative 'boulevard/version'
+require_relative 'boulevard/host_app'
 
 module Boulevard
   def self.gem_file_path(rel_path)
@@ -36,11 +37,5 @@ module Boulevard
 
   def self.unpackage(secret_key, package)
     Crypt.new(secret_key).unpackage(package)
-  end
-
-  def self.host_types
-    Dir[File.expand_path('../host_adapters/*.rb', __FILE__)].map do |path|
-      File.basename(path, '.rb')
-    end
   end
 end

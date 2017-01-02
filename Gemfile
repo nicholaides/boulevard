@@ -9,3 +9,5 @@ gem 'bundler'
 gem 'pry'
 gem 'rake'
 gem 'rspec'
+
+gem 'rack-test'
