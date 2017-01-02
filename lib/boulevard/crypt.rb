@@ -53,7 +53,7 @@ module Boulevard
     end
 
     def unpackage(envelope)
-      data = self.class.decode_envelope(envelope)
+      data = self.class.decode_envelope(envelope.strip)
 
       encrypted = data.fetch('encrypted')
 

@@ -26,6 +26,10 @@ describe Boulevard::Crypt do
     expect(crypt.unpackage(encrypted)).to eq original
   end
 
+  it 'encrypts and decrypts to the same thing, even with new lines at the beginning and end' do
+    expect(crypt.unpackage("\n\n#{encrypted}\n\n")).to eq original
+  end
+
   it 'encodes as a base64 string' do
     expect { Base64.strict_decode64(encrypted) }.to_not raise_exception
   end
