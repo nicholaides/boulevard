@@ -25,7 +25,7 @@ Your options:
   Pull your hair out trying to ensure staging is using the right version of your service if you make changes on both repos.
 4. Use Boulevard.
   All your code stays in 1 repo.
-  Locally development, staging and production are always in sync with the back-end code.
+  Local development, staging and production are always in sync with the back-end code.
 
 ### How does it run the code?
 Your server `eval`s the code you send.
