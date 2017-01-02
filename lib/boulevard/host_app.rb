@@ -1,4 +1,5 @@
 require 'rack'
+require 'boulevard'
 
 module Boulevard
   class HostApp < Struct.new(:key)
