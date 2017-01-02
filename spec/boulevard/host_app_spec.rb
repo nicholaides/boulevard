@@ -7,7 +7,12 @@ describe Boulevard::HostApp do
 
   let(:key) { Boulevard::Crypt.generate_key }
 
-  let(:code_package) { Boulevard::Crypt.new(key).package(guest_app_code) }
+  let(:code_package) { package(guest_app_code) }
+  let(:modal) { package(guest_app_code) }
+
+  def package(guest_app_code)
+    Boulevard::Crypt.new(key).package(guest_app_code)
+  end
 
   def expect_guest_app_to_run
     make_request
@@ -70,6 +75,42 @@ describe Boulevard::HostApp do
           JSON.parse(env['rack.input'].read)['some-param']
         "
       end
+    end
+  end
+
+  describe 'runtime' do
+    let(:app) { described_class.new(key) }
+
+    it 'does not leave methods and classes lying around after each request' do
+      post '/', '__code_package__': package(
+        "
+          def a_method; end
+          def self.a_class_method; end
+          a_local_var = true
+          @a_ivar = true
+          class AClass; end
+          module AModule; end
+
+          #{simple_rack_app('')}
+        "
+      )
+
+      post '/', '__code_package__': package(
+        "
+          definitions = {
+            a_method: defined?(a_method),
+            a_class_method: defined?(self.a_class_method),
+            a_local_var: defined?(a_local_var),
+            a_ivar: defined?(@a_ivar),
+            AClass: defined?(AClass),
+            AModule: defined?(AModule),
+          }
+
+          ->(*) { [200, {'Content-Type'=>'text/plain'}, definitions.to_json] }
+        "
+      )
+      definitions = JSON.parse(last_response.body)
+      expect(definitions).to all satisfy { |key, value| !value }
     end
   end
 end

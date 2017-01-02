@@ -25,13 +25,25 @@ module Boulevard
       code_package = request.params.fetch('__code_package__')
       guest_app_script = Boulevard::Crypt.new(key).unpackage(code_package)
 
-      boulevard_environment = {}
+      # There's got to be a better way to isolate each run. How does ERB do it?
+      isolated_scope = Class.new do
+        @@guest_app_script = guest_app_script
+        @@env = env
 
-      guest_app = eval(guest_app_script)
+        class << self
+          boulevard_environment = {}
+          guest_app = eval(@@guest_app_script)
+          @@env['boulevard.environment'] = boulevard_environment
 
-      env['boulevard.environment'] = boulevard_environment
+          @@result = guest_app.call(@@env)
 
-      guest_app.call(env)
+          def result
+            @@result
+          end
+        end
+      end
+
+      isolated_scope.result
     end
   end
 end
