@@ -10,8 +10,8 @@ describe Boulevard::HostApp do
   let(:code_package) { package(guest_app_code) }
   let(:modal) { package(guest_app_code) }
 
-  def package(guest_app_code)
-    Boulevard::Crypt.new(key).package(guest_app_code)
+  def package(*guest_app_code)
+    Boulevard::Crypt.new(key).package(guest_app_code.join("\n"))
   end
 
   def expect_guest_app_to_run
@@ -81,36 +81,49 @@ describe Boulevard::HostApp do
   describe 'runtime' do
     let(:app) { described_class.new(key) }
 
+    let(:definitions) do
+      "
+        def a_method; end
+        def self.a_class_method; end
+        a_local_var = true
+        @a_ivar = true
+        class AClass; end
+        module AModule; end
+      "
+    end
+
+    let(:rack_app_that_returns_definitions) do
+      "
+        definitions = {
+          a_method: defined?(a_method),
+          a_class_method: defined?(self.a_class_method),
+          a_local_var: defined?(a_local_var),
+          a_ivar: defined?(@a_ivar),
+          AClass: defined?(AClass),
+          AModule: defined?(AModule),
+        }
+
+        ->(*) { [200, {'Content-Type'=>'text/plain'}, definitions.to_json] }
+      "
+    end
+
+    it 'can define methods and stuff' do
+      post '/', '__code_package__': package(
+        definitions,
+        rack_app_that_returns_definitions
+      )
+
+      returned_definitions = JSON.parse(last_response.body)
+      expect(returned_definitions).to all satisfy { |_key, value| value }
+    end
+
     it 'does not leave methods and classes lying around after each request' do
-      post '/', '__code_package__': package(
-        "
-          def a_method; end
-          def self.a_class_method; end
-          a_local_var = true
-          @a_ivar = true
-          class AClass; end
-          module AModule; end
+      post '/', '__code_package__': package(definitions, simple_rack_app(''))
 
-          #{simple_rack_app('')}
-        "
-      )
+      post '/', '__code_package__': package(rack_app_that_returns_definitions)
 
-      post '/', '__code_package__': package(
-        "
-          definitions = {
-            a_method: defined?(a_method),
-            a_class_method: defined?(self.a_class_method),
-            a_local_var: defined?(a_local_var),
-            a_ivar: defined?(@a_ivar),
-            AClass: defined?(AClass),
-            AModule: defined?(AModule),
-          }
-
-          ->(*) { [200, {'Content-Type'=>'text/plain'}, definitions.to_json] }
-        "
-      )
-      definitions = JSON.parse(last_response.body)
-      expect(definitions).to all satisfy { |key, value| !value }
+      returned_definitions = JSON.parse(last_response.body)
+      expect(returned_definitions).to all satisfy { |_key, value| !value }
     end
   end
 end
