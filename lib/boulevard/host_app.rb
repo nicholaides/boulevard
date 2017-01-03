@@ -2,26 +2,37 @@ require 'rack'
 require 'boulevard'
 
 module Boulevard
-  class HostApp < Struct.new(:key)
-    class ExpandedRequest < Rack::Request
-      def params(*)
-        env['rack.request.json'] ||  super
+  module HostApp
+    def self.new(key)
+      Rack::Builder.new do
+        use Params
+        run EvalPackage.new(key)
       end
     end
+  end
 
-    $boulevard_runs = {}
-
+  class Params < Struct.new(:app)
     def call(env)
       body = env['rack.input'].read
       env['rack.input'].rewind
-      request = ExpandedRequest.new(env)
+      request = Rack::Request.new(env)
 
       if request.media_type == 'application/json' && !body.size.zero?
-        env.update 'rack.request.json' => JSON.parse(body)
+        env['rack.request.json'] = JSON.parse(body)
       end
 
-      code_package = request.params.fetch('__code_package__')
-      guest_app_script = Boulevard::Crypt.new(key).unpackage(code_package)
+      env['boulevard.params'] = env['rack.request.json'] || request.params
+      env['boulevard.code_package'] = env.fetch('boulevard.params').fetch('__code_package__')
+
+      app.call(env)
+    end
+  end
+
+  class EvalPackage < Struct.new(:key)
+    $boulevard_runs = {}
+
+    def call(env)
+      guest_app_script = Boulevard.unpackage(key, env.fetch('boulevard.code_package'))
 
       # random name so that we can avoid collisions because we have to use
       # global state:
