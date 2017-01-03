@@ -24,4 +24,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "commander", "~> 4.0"
   spec.add_dependency "rack"
+  spec.add_dependency "rack-cors"
 end

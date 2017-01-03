@@ -1,10 +1,17 @@
 require 'rack'
+require 'rack/cors'
 require 'boulevard'
 
 module Boulevard
   module HostApp
     def self.new(key)
       Rack::Builder.new do
+        use Rack::Cors do
+          allow do
+            origins '*'
+            resource '*', headers: :any, methods: :any
+          end
+        end
         use Params
         run EvalPackage.new(key)
       end
