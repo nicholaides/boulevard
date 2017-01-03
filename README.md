@@ -7,6 +7,7 @@ And yes, it works.
 
 ## How does it work?
 
+1. Write a back-end as a Rack app that you want to run on the server.
 1. Your back-end code is compressed, encrypted, signed, and encoded as base64.
 2. Put this base64 blob in a hidden form input, a query parameter, or a JSON request parameter, along with your other parameters.
 3. Your back-end code will run on the server and have access to the other parameters.
@@ -38,7 +39,7 @@ Any code that is not correctly signed with the shared secret is not run.
 The code is encrypted (and signed) with a shared secret.
 
 ### Can the server run *any* code?
-Right now, it only runs Ruby 1.9.3 (a limitation of Hook.io), but yes, it can run any code.
+Right now, it only runs Ruby 2.4.0, but yes, it can run any code.
 
 ### What about dependencies?
 At the moment, you'll have to stick to Ruby's standard library, which thankfully is rather robust.
@@ -50,47 +51,49 @@ Right now, you can set up a free endpoint on Hook.io.
 ### What do I do about passwords, API Keys, and other things that I don't want to be public?
 Those are encrypted, too, so nobody can see them.
 
+### If the code is being `eval`'d, what if it redefines constants/classes/modules on the server?
+
+Yeah, don't write code that messes with the global namespace.
+Boulevard uses a few tricks to keep your method/class/module definitions from sticking around after the request is over, but just like normal back-end code, you should avoid modifying global state.
+
 ## Demo (run from the shell)
 
-1. Install Boulevard: `gem install boulevard` (or better yet, put it in your `Gemfile`).
-2. Generate a secret key and save it.
+1. Setup. You'll only have to do this the first time.
+    1. Install Boulevard: `gem install boulevard` (or better yet, put it in your `Gemfile`).
+    2. Generate a secret key.
 
-        $ key=$(boulevard generate-key)
+            $ boulevard generate-key > .boulevard.key
+            $ secret_key=$(cat .boulevard.key)
 
-3. Set up a host to run your code.
+    3. Set up a host on Heroku to run your code.
 
-    1. Generate the code that will run on your host.
-      This is the code that receives your encrypted code and evals it.
+            $ git clone https://github.com/promptworks/boulevard-heroku-ruby
+            $ cd boulevard-heroku-ruby
+            $ heroku apps:create
+            $ heroku config:set BOULEVARD_SECRET_KEY="$secret_key"
+            $ git push heroku master
 
-            $ boulevard generate-host-code --secret-key "$key" --host-type hook_io | pbcopy
+        Remember the URL of the Heroku you just created.
 
-    2. Sign up for a free [Hook.io](https://hook.io) account (the only host currently supported).
-      Create a "service" and set the type to Ruby, and paste the output from the `generate-host-code` you just ran command into the text box.
+            $ host='https://scrumptious-eagle.herokuapp.com'
 
-    3. Remember the URL of the service you just created.
-      For this demo, we'll assign it to an environment variable.
-
-            $ host='https://hook.io/nicholaides/blvd-test'
-
-4. Write some back-end code.
-  Save it in a file, like `my-hook.rb`
+2. Write a Rack app that will run on the back-end.
+  Save it in a file, like `my-rack-app.rb`
 
     ```ruby
-    puts "Hello world"
-    puts Hook['params'].inspect
+    lambda do |env|
+      body = "Hello, " + env['boulevard.params']['first-name']
+
+      [200, {'Content-Type' => 'text/plain'}, [body]]
+    end
     ```
 
-5. Package up your back-end code.
-  For this demo we'll store it in an environment variable.
+3. Use Ajax, a form, or `curl` to send your code (packaged up) as a parameter:
 
-        $ package=$(boulevard package-code --secret-key "$key" my-hook.rb)
-
-6. Use Ajax, a form, or `curl` to send your code as a parameter:
-
-        $ curl \
-          -F "__code_package__=$package" \
-          -F other-param=some_values \
+        $ package=$(boulevard package-code my-rack-app.rb)
+        $ curl                            \
+          -F "__code_package__=$package"  \
+          -F first-name=Harambe           \
           $host
 
-        Hello world
-        {"__code_package__"=>"BAh7CEkiDmVuY...", "other-param"=>"some_values"}
+        Hello, Harambe
