@@ -7,6 +7,11 @@ module Boulevard
     class SignatureError < StandardError
     end
 
+    class NoKeyError < StandardError
+    end
+
+    KEY_FILE = '.boulevard.key'
+
     def self.generate_key
       encode_key(build_cipher.random_key)
     end
@@ -23,8 +28,14 @@ module Boulevard
       Base64.strict_decode64(key)
     end
 
-    def initialize(key)
+    def initialize(key = nil)
+      key ||= load_key_from_file or raise NoKeyError
+
       @key = self.class.decode_key(key)
+    end
+
+    def load_key_from_file
+      File.read(KEY_FILE).strip if File.exists?(KEY_FILE)
     end
 
     def sign(data)

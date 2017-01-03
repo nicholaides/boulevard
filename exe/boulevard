@@ -7,7 +7,14 @@ program :name, 'boulevard'
 program :version, Boulevard::VERSION
 program :description, 'Manage your Boulevard setup'
 
-Boulevard::SECRET_KEY_CONFIG_FILE = '.boulevard.key'
+def catch_no_key_error
+  yield
+rescue Boulevard::Crypt::NoKeyError
+  $stderr.puts "Secret key required."
+  $stderr.puts "Supply one via the '--secret-key' flag or store one in #{Boulevard::Crypt::KEY_FILE}"
+  $stderr.puts "You can generate one via `boulevard generate-secret-key`"
+  exit 1
+end
 
 command :'generate-key' do |c|
   c.syntax = 'boulevard generate-key'
@@ -16,38 +23,6 @@ command :'generate-key' do |c|
 
   c.action do |args, options|
     puts Boulevard::Crypt.generate_key
-  end
-end
-
-def require_secret_key(options)
-  options.secret_key or
-    load_secret_key_from_file or
-    fail_with_secret_key_message
-end
-
-def load_secret_key_from_file
-  File.read(Boulevard::SECRET_KEY_CONFIG_FILE).strip rescue nil
-end
-
-def fail_with_secret_key_message
-  $stderr.puts "Secret key required."
-  $stderr.puts "Supply one via the '--secret-key' flag or store one in #{Boulevard::SECRET_KEY_CONFIG_FILE}"
-  $stderr.puts "You can generate one via `boulevard generate-secret-key`"
-  exit 1
-end
-
-command :'generate-host-code' do |c|
-  c.syntax = 'boulevard generate-host-code --secret-key SECRET_KEY --host-type HOST_TYPE'
-  c.summary = 'Generate the code you need to put on the host'
-
-  c.description = 'Generates the code you can put on the host server. Currently only works with Hook.io.'
-
-  c.option '--secret-key STRING', String, 'Secret key'
-
-  c.action do |args, options|
-    secret_key = require_secret_key(options)
-
-    puts Boulevard.compile_host_code(secret_key, host_type)
   end
 end
 
@@ -60,15 +35,15 @@ command :'package-code' do |c|
   c.option '--secret-key STRING', String, 'Secret key'
 
   c.action do |args, options|
-    secret_key = require_secret_key(options)
+    catch_no_key_error do
+      output = if path = args[0]
+                 Boulevard.package_file(options.secret_key, path)
+               else
+                 Boulevard.package_code(options.secret_key, $stdin.read)
+               end
 
-    output = if path = args[0]
-               Boulevard.package_file(secret_key, path)
-             else
-               Boulevard.package_code(secret_key, $stdin.read)
-             end
-
-    puts output
+      puts output
+    end
   end
 end
 
@@ -81,14 +56,14 @@ command :'unpackage-code' do |c|
   c.option '--secret-key STRING', String, 'Secret key'
 
   c.action do |args, options|
-    secret_key = require_secret_key(options)
+    catch_no_key_error do
+      package = if path = args[0]
+                  File.read(path)
+                else
+                  $stdin.read
+                end
 
-    package = if path = args[0]
-                 File.read(path)
-               else
-                 $stdin.read
-               end
-
-    puts Boulevard.unpackage(secret_key, package)
+      puts Boulevard.unpackage(options.secret_key, package)
+    end
   end
 end
