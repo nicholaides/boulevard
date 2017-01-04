@@ -53,8 +53,7 @@ Those are encrypted, too, so nobody can see them.
 
 ### If the code is being `eval`'d, what if it redefines constants/classes/modules on the server?
 
-Yeah, don't write code that messes with the global namespace.
-Boulevard uses a few tricks to keep your method/class/module definitions from sticking around after the request is over, but just like normal back-end code, you should avoid modifying global state.
+Feel free to define methods, classes, modules, and other constants because Boulevard uses a few tricks to keep your method/class/module definitions from sticking around after the request is over, but just like normal back-end code, you should avoid modifying global state.
 
 ## Demo (run from the shell)
 
@@ -97,3 +96,57 @@ Boulevard uses a few tricks to keep your method/class/module definitions from st
           $host
 
         Hello, Harambe
+
+## Usage
+
+### Secret keys
+
+Whether you are using the CLI or Ruby library if you don't specify a secret key for a command, Boulevard will look for an read a `.boulevard.key` file in the current directory.
+
+### Packaging code
+
+When packaging up code, Boulevard will parse you `require_relative` statements and include those files as well.
+It works recursively.
+
+### Command Line
+
+The command line tool is for shell scripting.
+With it, you can do almost anything you can with the Ruby library.
+Install the gem and run `boulevard --help` for more details.
+
+### Ruby library
+
+Mostly, you'll probably just want to package up some code to be sent.
+
+If you have the code as a string:
+
+```ruby
+Boulevard.package_code(secret_key, rack_app_as_a_string, environment)
+```
+
+If you have the code as a file:
+
+```ruby
+Boulevard.package_file(secret_key, file_path_to_rack_app, environment)
+```
+
+#### `secret_key`
+Your secret key as a string.
+If this is `nil`, it will look for a `.boulevard.key` file.
+
+#### `environment`
+Whatever you put in here will be Marshalled and accessible to your rack app as `env['boulevard.environment']`
+This is useful for sending parameters that differ based on environment (dev/staging/prod).
+
+E.g.
+
+```ruby
+bldv_env = {}
+bldv_env[:our_email] = if development?
+                         'testing-email@mailinator.com'
+                       else
+                         'admin@mycompany.com'
+                       end
+
+Boulevard.package_file(nil, 'blvd/contact_form.rb', bldv_env)
+```
