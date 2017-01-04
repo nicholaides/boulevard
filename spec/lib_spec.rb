@@ -2,7 +2,7 @@ require 'rack/test'
 require 'boulevard/host_app'
 require 'json'
 
-describe 'Using Boulevard from Ruby', type: :aruba do
+describe 'Using Boulevard from Ruby' do
   include Rack::Test::Methods
   let(:app) { Boulevard::HostApp.new(secret_key) }
 
