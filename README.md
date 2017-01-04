@@ -64,19 +64,22 @@ Feel free to define methods, classes, modules, and other constants because Boule
             $ boulevard generate-key > .boulevard.key
             $ secret_key=$(cat .boulevard.key)
 
-    3. Set up a host on Heroku to run your code.
+    3. Set up a Boulevard host on Heroku to run your code.
+      You'll need Heroku's CLI tool and a Heroku account.
+      Switch to a different directory and run:
 
+            $ cd ~/Desktop
             $ git clone https://github.com/promptworks/boulevard-heroku-ruby
             $ cd boulevard-heroku-ruby
             $ heroku apps:create
             $ heroku config:set BOULEVARD_SECRET_KEY="$secret_key"
             $ git push heroku master
 
-        Remember the URL of the Heroku you just created.
+        Remember the URL of the Heroku app you just created.
 
             $ host='https://scrumptious-eagle.herokuapp.com'
 
-2. Write a Rack app that will run on the back-end.
+2. Back in our app's directory, write a Rack app that will run on the back-end.
   Save it in a file, like `my-rack-app.rb`
 
     ```ruby
@@ -121,32 +124,31 @@ Mostly, you'll probably just want to package up some code to be sent.
 If you have the code as a string:
 
 ```ruby
-Boulevard.package_code(secret_key, rack_app_as_a_string, environment)
+Boulevard.package_code(rack_app_as_a_string, secret_key:, env:)
 ```
 
 If you have the code as a file:
 
 ```ruby
-Boulevard.package_file(secret_key, file_path_to_rack_app, environment)
+Boulevard.package_file(file_path_to_rack_app, secret_key:, env:)
 ```
 
 #### `secret_key`
 Your secret key as a string.
 If this is `nil`, it will look for a `.boulevard.key` file.
 
-#### `environment`
+#### `env`
 Whatever you put in here will be Marshalled and accessible to your rack app as `env['boulevard.environment']`
 This is useful for sending parameters that differ based on environment (dev/staging/prod).
 
 E.g.
 
 ```ruby
-bldv_env = {}
-bldv_env[:our_email] = if development?
-                         'testing-email@mailinator.com'
-                       else
-                         'admin@mycompany.com'
-                       end
+bldv_env = if development?
+             { our_email: 'testing-email@mailinator.com' }
+           else
+             { our_email: 'admin@mycompany.com' }
+           end
 
-Boulevard.package_file(nil, 'blvd/contact_form.rb', bldv_env)
+Boulevard.package_file('blvd/contact_form.rb', env: bldv_env)
 ```
