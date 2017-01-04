@@ -37,9 +37,9 @@ command :'package-code' do |c|
   c.action do |args, options|
     catch_no_key_error do
       output = if path = args[0]
-                 Boulevard.package_file(options.secret_key, path)
+                 Boulevard.package_file(path, secret_key: options.secret_key)
                else
-                 Boulevard.package_code(options.secret_key, $stdin.read)
+                 Boulevard.package_code($stdin.read, secret_key: options.secret_key)
                end
 
       puts output
@@ -63,7 +63,7 @@ command :'unpackage-code' do |c|
                   $stdin.read
                 end
 
-      puts Boulevard.unpackage(options.secret_key, package)
+      puts Boulevard.unpackage(package, secret_key: options.secret_key)
     end
   end
 end

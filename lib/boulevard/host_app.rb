@@ -39,7 +39,10 @@ module Boulevard
     $boulevard_runs = {}
 
     def call(env)
-      guest_app_script = Boulevard.unpackage(key, env.fetch('boulevard.code_package'))
+      guest_app_script = Boulevard.unpackage(
+        env.fetch('boulevard.code_package'),
+        secret_key: key
+      )
 
       # random name so that we can avoid collisions because we have to use
       # global state:
