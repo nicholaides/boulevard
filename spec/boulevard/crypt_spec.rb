@@ -45,7 +45,6 @@ describe Boulevard::Crypt do
     change_random_byte! encrypted
 
     reencrypted = described_class.encode_envelope(envelope)
-    expect { crypt.unpackage(reencrypted) }.to raise_exception described_class::SignatureError
+    expect { crypt.unpackage(reencrypted) }.to raise_exception OpenSSL::Cipher::CipherError
   end
 end
-

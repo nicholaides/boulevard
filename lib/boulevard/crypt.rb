@@ -4,20 +4,18 @@ require 'zlib'
 
 module Boulevard
   class Crypt
-    class SignatureError < StandardError
-    end
-
     class NoKeyError < StandardError
     end
 
     KEY_FILE = '.boulevard.key'
+    AUTH_DATA = ''
 
     def self.generate_key
       encode_key(build_cipher.random_key)
     end
 
-    def self.build_cipher(args = ['aes-256-cbc'])
-      OpenSSL::Cipher.new(*args)
+    def self.build_cipher
+      OpenSSL::Cipher.new('aes-256-gcm')
     end
 
     def self.encode_key(key)
@@ -38,17 +36,13 @@ module Boulevard
       File.read(KEY_FILE).strip if File.exists?(KEY_FILE)
     end
 
-    def sign(data)
-      OpenSSL::HMAC.digest('SHA256', @key, data)
-    end
-
     def package(data)
-      encrypted, iv = encrypt(self.class.zip(data))
+      encrypted, iv, auth_tag = encrypt(self.class.zip(data))
 
       self.class.encode_envelope(
         'encrypted' => encrypted,
         'iv' => iv,
-        'signature' => sign(encrypted),
+        'auth_tag' => auth_tag,
       )
     end
 
@@ -57,10 +51,12 @@ module Boulevard
       cipher.encrypt
       cipher.key = @key
       iv = cipher.random_iv
+      cipher.auth_data = AUTH_DATA
 
       encrypted = cipher.update(data) + cipher.final
+      auth_tag = cipher.auth_tag
 
-      [encrypted, iv]
+      [encrypted, iv, auth_tag]
     end
 
     def unpackage(envelope)
@@ -68,20 +64,16 @@ module Boulevard
 
       encrypted = data.fetch('encrypted')
 
-      verify_signature! encrypted, data.fetch('signature')
-
-      self.class.unzip(decrypt(encrypted, data.fetch('iv')))
+      self.class.unzip(decrypt(encrypted, data.fetch('iv'), data.fetch('auth_tag')))
     end
 
-    def verify_signature!(encrypted, signature)
-      raise SignatureError if sign(encrypted) != signature
-    end
-
-    def decrypt(encrypted, iv)
+    def decrypt(encrypted, iv, auth_tag)
       decipher = self.class.build_cipher
       decipher.decrypt
       decipher.key = @key
       decipher.iv = iv
+      decipher.auth_tag = auth_tag
+      decipher.auth_data = AUTH_DATA
 
       decipher.update(encrypted) + decipher.final
     end
