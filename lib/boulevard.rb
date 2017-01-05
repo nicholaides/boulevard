@@ -11,10 +11,10 @@ module Boulevard
     package(Compiler::Code.new(code), **rest)
   end
 
-  def self.package(compilable, secret_key: nil, env: nil)
+  def self.package(compilable, secret_key: nil, data: nil)
     crypt = Crypt.new(secret_key)
 
-    code = Compiler.new.(Compiler::Environment.new(env), compilable)
+    code = Compiler.new.(Compiler::Data.new(data), compilable)
 
     crypt.package(code)
   end

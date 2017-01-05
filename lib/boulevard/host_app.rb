@@ -74,8 +74,8 @@ module Boulevard
             # $boulevard_runs
             guest = $boulevard_runs[#{run_name.inspect}]
 
-            # this variable is overridden if there is any Compiler::Environment
-            boulevard_environment = {}
+            # this variable is overridden if there is any Compiler::Data
+            boulevard_data = {}
 
             # - Wrap in begin/end so that the return value of the last line of
             #   the guest script is captured
@@ -84,15 +84,15 @@ module Boulevard
               #{guest_app_script}
             end
 
-            # save the environment in order to pass it in to the rack app
-            guest[:environment] = boulevard_environment
+            # save the data in order to pass it in to the rack app
+            guest[:data] = boulevard_data
           end
 
         end
       "
 
       # put it in the env so that the guest app can have access to it
-      env['boulevard.environment'] = guest_run[:environment]
+      env['boulevard.data'] = guest_run[:data]
 
       # Remove these so they can be garbage collected. Otherwise, every request
       # would add something to memory that would never get garbage collected.

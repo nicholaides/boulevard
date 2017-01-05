@@ -33,14 +33,14 @@ module Boulevard
       end
     end
 
-    class Environment < Struct.new(:value)
+    class Data < Struct.new(:value)
       def id
         object_id
       end
 
       def contents
         "
-        ;boulevard_environment = Marshal.load(#{Marshal.dump(value).inspect});
+        ;boulevard_data = Marshal.load(#{Marshal.dump(value).inspect});
         "
       end
 

@@ -20,12 +20,12 @@ describe 'Using Boulevard from Ruby' do
     expect(last_response.body).to eq 'Hello World'
   end
 
-  it 'can include an environment' do
-    guest_app_code = simple_rack_app "env['boulevard.environment'][:some_env_param]"
+  it 'can include some data' do
+    guest_app_code = simple_rack_app "env['boulevard.data'][:some_data_key]"
     package = Boulevard.package_code(
       guest_app_code,
       secret_key: secret_key,
-      env: { some_env_param: 'Hello World' }
+      data: { some_data_key: 'Hello World' }
     )
 
     post '/', __code_package__: package

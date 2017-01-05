@@ -124,31 +124,34 @@ Mostly, you'll probably just want to package up some code to be sent.
 If you have the code as a string:
 
 ```ruby
-Boulevard.package_code(rack_app_as_a_string, secret_key:, env:)
+Boulevard.package_code(rack_app_as_a_string, secret_key:, data:)
 ```
 
 If you have the code as a file:
 
 ```ruby
-Boulevard.package_file(file_path_to_rack_app, secret_key:, env:)
+Boulevard.package_file(file_path_to_rack_app, secret_key:, data:)
 ```
 
 #### `secret_key`
 Your secret key as a string.
 If this is `nil`, it will look for a `.boulevard.key` file.
 
-#### `env`
-Whatever you put in here will be Marshalled and accessible to your rack app as `env['boulevard.environment']`
-This is useful for sending parameters that differ based on environment (dev/staging/prod).
+#### `data`
+Whatever you put in here will be Marshalled and accessible to your rack app as `env['boulevard.data']`
+This is useful for
+
+- sending parameters that differ based on environment (dev/staging/prod).
+- sending data like file contents or Erb templates
 
 E.g.
 
 ```ruby
-bldv_env = if development?
-             { our_email: 'testing-email@mailinator.com' }
-           else
-             { our_email: 'admin@mycompany.com' }
-           end
+bldv_data = if development?
+              { our_email: 'testing-email@mailinator.com' }
+            else
+              { our_email: 'admin@mycompany.com' }
+            end
 
-Boulevard.package_file('blvd/contact_form.rb', env: bldv_env)
+Boulevard.package_file('blvd/contact_form.rb', data: bldv_data)
 ```
