@@ -16,6 +16,12 @@ rescue Boulevard::Crypt::NoKeyError
   exit 1
 end
 
+def secret_key_option(c)
+  c.option '--secret-key "STRING"',
+    String,
+    "Secret key. If not provided, will look for one in #{Boulevard::Crypt::KEY_FILE}"
+end
+
 command :'generate-key' do |c|
   c.syntax = 'boulevard generate-key'
   c.summary = 'Generate a new shared key'
@@ -32,7 +38,7 @@ command :'package-code' do |c|
 
   c.description = 'If path given, load file, otherwise load from from STDIN.'
 
-  c.option '--secret-key STRING', String, 'Secret key'
+  secret_key_option c
 
   c.action do |args, options|
     catch_no_key_error do
@@ -49,11 +55,11 @@ end
 
 command :'unpackage-code' do |c|
   c.syntax = 'boulevard unpackage-code [path] [options]'
-  c.summary = 'Take some code and unpackage it. This is mostly for testing.'
+  c.summary = 'Take some code and unpackage it. This is really just for testing/verification.'
 
   c.description = 'If path given, load file, otherwise load from from STDIN.'
 
-  c.option '--secret-key STRING', String, 'Secret key'
+  secret_key_option c
 
   c.action do |args, options|
     catch_no_key_error do

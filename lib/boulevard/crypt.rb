@@ -19,11 +19,11 @@ module Boulevard
     end
 
     def self.encode_key(key)
-      Base64.strict_encode64(key)
+      key.unpack('H*')[0].to_i(16).to_s(36)
     end
 
     def self.decode_key(key)
-      Base64.strict_decode64(key)
+      [key.strip.to_i(36).to_s(16)].pack('H*')
     end
 
     def initialize(key = nil)

@@ -72,7 +72,7 @@ Feel free to define methods, classes, modules, and other constants because Boule
             $ git clone https://github.com/promptworks/boulevard-heroku-ruby
             $ cd boulevard-heroku-ruby
             $ heroku apps:create
-            $ heroku config:set BOULEVARD_SECRET_KEY="$secret_key"
+            $ heroku config:set BOULEVARD_SECRET_KEY=$secret_key
             $ git push heroku master
 
         Remember the URL of the Heroku app you just created.

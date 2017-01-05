@@ -1,17 +1,8 @@
 describe Boulevard::Crypt, '.generate_key' do
   subject(:key) { described_class.generate_key }
 
-  describe '.generate_key' do
-    let(:decoded_key) { Base64.strict_decode64(key) }
-
-    it 'generates a base64 encoded key' do
-      expect { decoded_key }.to_not raise_exception
-    end
-
-    it 'contains data' do
-      expect(decoded_key).to be_a String
-      expect(decoded_key).to_not be_empty
-    end
+  it 'generates a key without special characters' do
+    expect(key).to match(/^[[:alnum:]]+$/)
   end
 end
 
